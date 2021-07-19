@@ -135,8 +135,8 @@ if __name__ == "__main__":
     ws = add_cylinder_sample_to_workspace(
         ws,
         "C",
-        0.07261,  # ?
-        3.515,  # g/cm3 (https://en.wikipedia.org/wiki/Carbon)
+        176.2,  # 10^27/m^3 (https://en.wikipedia.org/wiki/Number_density)
+        3.515,  # g/cm^3 (https://en.wikipedia.org/wiki/Carbon)
         [0.0, -0.0284, 0.0],
         0.00295,
         0.0568,
