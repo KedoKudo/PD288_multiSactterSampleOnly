@@ -7,12 +7,9 @@ from mantid.simpleapi import (
     ConvertUnits,
     CreateSampleWorkspace,
     EditInstrumentGeometry,
-    Divide,
     SetSample,
     MayersSampleCorrection,
-    CalculateCarpenterSampleCorrection,
     CarpenterSampleCorrection,
-    PaalmanPingsAbsorptionCorrection,
     MultipleScatteringCorrection,
 )
 
@@ -38,11 +35,13 @@ def make_sample_workspace():
     return sample_ws
 
 
-def add_cylinder_sample_to_workspace(ws,
-                                     sample_material,
-                                     sample_density,
-                                     height=0.1,
-                                     radius=0.1):
+def add_cylinder_sample_to_workspace(
+        ws,
+        sample_material,
+        sample_density,
+        height=0.1,  # in meter
+        radius=0.1,  # in meter
+):
     SetSample(ws,
               Geometry={
                   "Shape": "Cylinder",
@@ -65,40 +64,45 @@ def correction_Mayers(sample_ws):
                  OutputWorkspace=sample_ws,
                  Target="TOF",
                  EMode="Elastic")
-    #
-    absorption = MayersSampleCorrection(sample_ws, MultipleScattering=False)
-    multiplescattering = MayersSampleCorrection(sample_ws,
-                                                MultipleScattering=True)
-    #
-    return absorption, multiplescattering
+    return MayersSampleCorrection(sample_ws, MultipleScattering=True)
 
 
 # use Carpenter correction
-def get_carpenter_results(sample_ws, cylinder_radius=0.2):
+def correction_carpenter(sample_ws):
     ConvertUnits(InputWorkspace=sample_ws,
                  OutputWorkspace=sample_ws,
                  Target="Wavelength",
                  EMode="Elastic")
-    corrections = CalculateCarpenterSampleCorrection(
-        InputWorkspace=sample_ws, CylinderSampleRadius=cylinder_radius)
-    absCorr = corrections.getItem(0)
-    absorption = Divide(sample_ws, absCorr)
-    multiplescattering = CarpenterSampleCorrection(sample_ws)
-    return absorption, multiplescattering
+    return CarpenterSampleCorrection(sample_ws)
 
 
 # use Mutliple scattering correction
-def get_multiple_scattering_results(sample_ws, unit="Wavelength"):
+def correction_multiple_scattering(sample_ws, unit="Wavelength"):
     ConvertUnits(InputWorkspace=sample_ws,
                  OutputWorkspace=sample_ws,
                  Target=unit,
                  EMode="Elastic")
-    #
-    absorption = PaalmanPingsAbsorptionCorrection(sample_ws)
-    #
-    multiplescattering = MultipleScatteringCorrection(sample_ws)
-    return absorption, multiplescattering
+    return MultipleScatteringCorrection(sample_ws)
 
 
 if __name__ == "__main__":
     print("running exmaple test")
+    # make testing workspace
+    ws = make_sample_workspace()
+    # add cylinder sample
+    ws = add_cylinder_sample_to_workspace(ws, "V", 0.07261, 4e-2, 0.25e-2)
+
+    # use Mayers correction
+    mayers_multi = correction_Mayers(ws)
+
+    # use Carpenter correction
+    carpenter_multi = correction_carpenter(ws)
+
+    # use Multiple scattering correction
+    ms_multi = correction_multiple_scattering(ws)
+
+    # validation
+    # -- cast to wavelength
+    for me in [ws, mayers_multi, carpenter_multi, ms_multi]:
+        ConvertUnits(me, "WaveLength")
+    # -- compute difference
