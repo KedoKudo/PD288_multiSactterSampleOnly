@@ -13,12 +13,14 @@ from mantid.simpleapi import (
     MultipleScatteringCorrection,
 )
 
+import numpy as np
+
 
 # prep example data
 def make_sample_workspace():
     # Create a fake workspace with TOF data
     sample_ws = CreateSampleWorkspace(Function='Powder Diffraction',
-                                      NumBanks=1,
+                                      NumBanks=4,
                                       BankPixelWidth=1,
                                       XUnit='TOF',
                                       XMin=1000,
@@ -55,15 +57,13 @@ def add_cylinder_sample_to_workspace(
             },
             "Height": height,
             "Radius": radius,
-            "axis": {
-                "x": 0.0,
-                "y": 1.0,
-                "z": 0.0
-            },
+            "Axis": 1,
         },
-        ChemicalFormula=material,
-        SampleNumberDensity=number_density,
-        SampleMassDensity=mass_density,
+        Material = {
+            "ChemicalFormula": material,
+            "SampleNumberDensity": number_density,
+            "SampleMassDensity": mass_density,
+        }
     )
     return ws
 
@@ -74,7 +74,8 @@ def correction_Mayers(sample_ws):
                  OutputWorkspace=sample_ws,
                  Target="TOF",
                  EMode="Elastic")
-    return MayersSampleCorrection(sample_ws, MultipleScattering=True)
+    rst = MayersSampleCorrection(sample_ws, MultipleScattering=True)
+    return rst
 
 
 # use Carpenter correction
@@ -83,7 +84,8 @@ def correction_carpenter(sample_ws):
                  OutputWorkspace=sample_ws,
                  Target="Wavelength",
                  EMode="Elastic")
-    return CarpenterSampleCorrection(sample_ws)
+    rst = CarpenterSampleCorrection(sample_ws)
+    return rst
 
 
 # use Mutliple scattering correction
@@ -92,7 +94,8 @@ def correction_multiple_scattering(sample_ws, unit="Wavelength"):
                  OutputWorkspace=sample_ws,
                  Target=unit,
                  EMode="Elastic")
-    return MultipleScatteringCorrection(sample_ws)
+    rst = MultipleScatteringCorrection(sample_ws)
+    return rst
 
 
 if __name__ == "__main__":
@@ -124,8 +127,10 @@ if __name__ == "__main__":
 
     # validation
     # -- cast to wavelength
-    for me in [ws, mayers_multi, carpenter_multi, ms_multi]:
-        ConvertUnits(me, "WaveLength")
+    ws = ConvertUnits(ws, "Wavelength")
+    mayers_multi = ConvertUnits(mayers_multi, "Wavelength")
+    carpenter_multi = ConvertUnits(carpenter_multi, "Wavelength")
+    ms_multi = ConvertUnits(ms_multi, "Wavelength")
     # -- compute difference
 
     # ---
@@ -149,6 +154,6 @@ if __name__ == "__main__":
 
     # validation
     # -- cast to wavelength
-    mayers_multi = ConvertUnits(mayers_multi, "WaveLength")
-    ms_multi = ConvertUnits(ms_multi, "WaveLength")
+    mayers_multi = ConvertUnits(mayers_multi, "Wavelength")
+    ms_multi = ConvertUnits(ms_multi, "Wavelength")
     # -- compute difference
