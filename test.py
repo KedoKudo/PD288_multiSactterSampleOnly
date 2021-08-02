@@ -9,8 +9,9 @@ from mantid.simpleapi import (
     EditInstrumentGeometry,
     SetSample,
     MayersSampleCorrection,
-    CarpenterSampleCorrection,
+    CalculateCarpenterSampleCorrection,
     MultipleScatteringCorrection,
+    CompareWorkspaces,
 )
 
 import numpy as np
@@ -84,7 +85,7 @@ def correction_carpenter(sample_ws):
                  OutputWorkspace=sample_ws,
                  Target="Wavelength",
                  EMode="Elastic")
-    rst = CarpenterSampleCorrection(sample_ws)
+    rst = CalculateCarpenterSampleCorrection(sample_ws)
     return rst
 
 
@@ -132,7 +133,12 @@ if __name__ == "__main__":
     carpenter_multi = ConvertUnits(carpenter_multi, "Wavelength")
     ms_multi = ConvertUnits(ms_multi, "Wavelength")
     # -- compute difference
+    CompareWorkspaces(Workspace1='carpenter_multi',
+                      Workspace2='ms_multi',
+                      CheckInstrument=False,
+                      CheckMasking=False)
 
+    """
     # ---
     # TEST_2: Diamond
     ws = make_sample_workspace()
@@ -157,3 +163,4 @@ if __name__ == "__main__":
     mayers_multi = ConvertUnits(mayers_multi, "Wavelength")
     ms_multi = ConvertUnits(ms_multi, "Wavelength")
     # -- compute difference
+    """
